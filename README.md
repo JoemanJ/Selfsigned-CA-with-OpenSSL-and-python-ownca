@@ -7,7 +7,7 @@
 ### Informações do Grupo
 - **Disciplina:** Segurança em Computação 2025/2
 - **Integrantes:**  
-  - Nome: _____________  
+  - Nome: Diogo Delazare Brandão  
   - Nome: _____________  
   - Nome: _____________  
 
