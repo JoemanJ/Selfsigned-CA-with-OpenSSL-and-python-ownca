@@ -8,7 +8,7 @@
 - **Disciplina:** Segurança em Computação 2025/2
 - **Integrantes:**  
   - Nome: Diogo Delazare Brandão  
-  - Nome: _____________  
+  - Nome: Jullie de Castro Quadros
   - Nome: _____________  
 
 ---
