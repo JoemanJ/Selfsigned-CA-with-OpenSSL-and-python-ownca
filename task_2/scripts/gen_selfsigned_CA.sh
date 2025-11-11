@@ -4,6 +4,8 @@
 # 
 # This script will prompt you for a password for the newly generated CA
 # The password must be between 4 and 1024 characters long
+# It will also prompt you for identifying information for the CA, such as country,
+# estate, etc. 
 # 
 # The CA is created at "../certs/CA.crt"
 # The CA private key is created at "../keys/CA.key"
@@ -19,4 +21,3 @@ openssl req -newkey rsa:4096 \
             -days 3650 \
             -out ../certs/CA.crt \
             -keyout ../keys/CA.key \
-            -subj "/C=BR/ST=Espirito Santo/L=Vitoria/O=UFES - Universidade Federal do Espirito Santo/OU=CT/CN=SegurancaEmComputacao.com"
