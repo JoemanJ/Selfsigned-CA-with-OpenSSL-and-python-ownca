@@ -23,8 +23,8 @@
 
 cd "$(dirname "$0")"
 
-mkdir ../keys
-mkdir ../certs
+mkdir -p ../keys
+mkdir -p ../certs
 
 openssl req -newkey rsa:4096 \
             -x509 \

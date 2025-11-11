@@ -10,8 +10,8 @@
 
 cd "$(dirname "$0")"
 
-mkdir ../keys
-mkdir ../reqs
+mkdir -p ../keys
+mkdir -p ../reqs
 
 # Generate RSA key
 openssl genrsa -out ../keys/server.key 4096
