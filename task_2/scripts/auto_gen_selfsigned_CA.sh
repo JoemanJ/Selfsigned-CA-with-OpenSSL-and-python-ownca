@@ -9,6 +9,14 @@
 # Keep in mind this is for demonstration purposes only! You should always use 
 # strong passwords and correct identifying information for your CAs
 # 
+# The default values used here are:
+#   Country:            BR
+#   State/Province:     Espirito Santo
+#   Locality:           Vitoria
+#   Organization:       UFES - Universidade Federal do Espirito Santo
+#   Organization unit:  CT
+#   Common name:        SegurancaEmComputacao.com
+#
 # The CA is created at "../certs/CA.crt"
 # The CA private key is created at "../keys/CA.key"
 
@@ -21,7 +29,7 @@ openssl req -newkey rsa:4096 \
             -x509 \
             -sha256 \
             -days 3650 \
-            -nodes \
+            -noenc \
             -out ../certs/CA.crt \
             -keyout ../keys/CA.key \
             -subj "/C=BR/ST=Espirito Santo/L=Vitoria/O=UFES - Universidade Federal do Espirito Santo/OU=CT/CN=SegurancaEmComputacao.com"
