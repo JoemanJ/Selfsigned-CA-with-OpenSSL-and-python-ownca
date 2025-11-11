@@ -16,6 +16,7 @@
 #   Organization:       UFES - Universidade Federal do Espirito Santo
 #   Organization unit:  CT
 #   Common name:        SegurancaEmComputacao.com
+#   Email:              [none]
 #
 # The CA is created at "../certs/CA.crt"
 # The CA private key is created at "../keys/CA.key"
