@@ -5,4 +5,4 @@
 
 cd "$(dirname "$0")"
 
-openssl x509 -req -days 3650 -in ../reqs/server.csr -CA ../certs/CA.crt -CAkey ../keys/CA.key -CAcreateserial -out ../certs/server.crt
+openssl x509 -req -days 3650 -in ../reqs/server.csr -CA ../certs/CA.crt -CAkey ../keys/CA.key -CAcreateserial -out ../certs/server.crt -days 365 -sha256 -extfile v3.ext
