@@ -157,7 +157,7 @@ Como podemos ver, agora o navegador reconhece o site como seguro:
 
 Repare o aviso que diz que a Mozilla não reconhece esta CA. De fato, ela foi adicinada por nós mesmos.
 
----
+O script ```./task_2/scripts/cleanup.sh``` pode ser usado para excluir automaticamente todas os arquivos de chaves, CSRs e certificados gerados durante o processo.
 
 ## 4. Comparação entre os Dois Cenários
 Responda às questões abaixo com base na experiência prática:
