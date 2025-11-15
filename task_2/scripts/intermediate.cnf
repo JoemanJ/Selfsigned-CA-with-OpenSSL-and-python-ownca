@@ -1,0 +1,7 @@
+[ v3_intermediate_ca ]
+# Basic Constraints must be in every CA certificate
+basicConstraints = critical, CA:true, pathlen:0
+# pathlen:0 means this CA can only sign end-entity certificates (not other CAs)
+
+# Key Usage (must be digitalSignature, keyCertSign, cRLSign)
+keyUsage = critical, digitalSignature, cRLSign, keyCertSign
