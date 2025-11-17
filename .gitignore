@@ -3,3 +3,7 @@
 *.srl
 *.csr
 *.pem
+**/certs
+**/challenges
+**/keys
+**/__pycache__
