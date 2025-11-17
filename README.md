@@ -9,7 +9,7 @@
 - **Integrantes:**  
   - Nome: Diogo Delazare Brandão  
   - Nome: Jullie de Castro Quadros
-  - Nome: _____________  
+  - Nome: Thyago Vieira Piske
 
 ---
 
