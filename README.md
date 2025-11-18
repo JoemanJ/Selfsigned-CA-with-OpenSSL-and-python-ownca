@@ -21,31 +21,161 @@ Descreva e desenhe (use figuras) a arquitetura geral dos dois cenários implemen
 
 ---
 
-## 2. Tarefa 1 – HTTPS com Certificado Público (Let's Encrypt + ngrok)
+## 2. Tarefa 1 – HTTPS com Certificado Válido via CA Privada (Root + Intermediária) usando Python
 
 ### 2.1. Preparação do Ambiente
-- Sistema operacional: ____________________  
-- Ferramentas utilizadas: ____________________  
-- Versão do Docker / Nginx: ____________________  
-- Descreva e disponibilize a configuração do servidor web e a página de exemplo criada:
+- **Sistema operacional:** Wsl (Ubuntu 22.04 LTS) no Windows 11.
+- **Ferramentas utilizadas:** Python 3, Docker, Nginx, biblioteca `cryptography` (Python).
+- **Versão do Docker / Nginx:** Docker 27.2.0, Imagem Nginx: `nginx:latest`
+  O servidor web utiliza Nginx rodando em um container Docker, orquestrado pelo `docker-compose.yml`.
+  A configuração inicial (`nginx.conf`) escuta apenas na porta 80 (HTTP) e possui duas rotas:
+  1.  `location /`: Serve a página `index.html` padrão.
+  2.  `location /.well-known/acme-challenge/`: Rota para a validação de domínio (desafio HTTP-01).
+  
+  O `docker-compose.yml` mapeia os volumes:
+  * `./index.html` -> Página web principal.
+  * `./nginx.conf` -> Arquivo de configuração do Nginx.
+  * `../challenges` -> Diretório no host que o Nginx servirá como a rota de desafio (`/var/www/challenges` no container).
+  **Importante**: Considere que root é a pasta task_1.
 
-### 2.2. Exposição com ngrok
-- Domínio público gerado: ______________________________  
-- Explique como o túnel foi utilizado para permitir a validação do domínio pelo Let's Encrypt.
+### 2.2. Simulação de Validação
+- **Domínio público gerado:** N/A. O teste foi realizado inteiramente em ambiente local usando o domínio `localhost`.
+
+O processo simulou o protocolo ACME (usado pelo Let's Encrypt):
+#### 2.2.1. Criar CA Raiz
+  ```bash
+  python pki_manager.py init-root-ca
+  ```
+
+  Cria `certs/CA.pem` e `keys/CA.key` (RSA 4096 bits, autoassinado).
+
+  Parâmetros opcionais:
+  - `--common-name` (default `rootca.com`)
+  - `--organization` (default `UFES`)
+  - `--organizational-unit` (default `CT`)
+  - `--country` (default `BR`)
+  - `--locality` (default `Vitoria`)
+  - `--state` (default `ES`)
+  - `--validity-days` (default `365`)
+
+    
+#### 2.2.2. Criar CA Intermediária
+
+```bash
+python pki_manager.py init-intermediate-ca
+```
+
+Cria `certs/intermediate_CA.pem` e `keys/intermediate_CA.key` (RSA 4096 bits, assinado pela Raiz).
+
+Parâmetros opcionais:
+- `--common-name` (default `intermediateca.com`)
+- `--organization` (default `UFES`)
+- `--organizational-unit` (default `INF`)
+- `--country` (default `BR`)
+- `--locality` (default `Vitoria`)
+- `--state` (default `ES`)
+- `--validity-days` (default `365`)
+
+
+#### 2.2.3. Gerar Desafio para Domínio
+
+```bash
+python pki_manager.py generate-challenge localhost
+```
+
+Gera um token (GUID), salva internamente e mostra as instruções:
+- Criar arquivo `challenges/.well-known/acme-challenge/<token>.txt` no servidor 
+- Conteúdo: `<token>.<domínio>`
 
 ### 2.3. Emissão do Certificado
-- Caminho do certificado gerado: _________________________  
-- Explique o processo de validação e emissão e quais arquivos foram gerados.
+- **Caminho do certificado gerado:** `certs/server.chained.crt` (cadeia completa) e `keys/server.key` (chave privada).
+  Após o sucesso da validação descrita acima, o script `issue-certificate` procedeu com a emissão:
+```bash
+python pki_manager.py issue-certificate localhost
+```
+
+Valida o desafio (busca o token salvo internamente) fazendo requisição HTTP e emite o certificado se válido.
+
+Cria:
+- `certs/server.crt` - Certificado do servidor
+- `certs/server.chained.crt` - Cadeia completa (server + intermediate)
+- `keys/server.key` - Chave privada (RSA 4096 bits)
+
+Parâmetros adicionais:
+- `--organization` (default `UFES`)
+- `--organizational-unit` (default `INF`)
+- `--country` (default `BR`)
+- `--locality` (default `Vitoria`)
+- `--state` (default `ES`)
+- `--validity-days` (default `365`)
+
+#### 2.3.1. Detalhes da Validação do Desafio
+
+A CA armazena os desafios pendentes em `certs/challenges.json`.
+
+Quando você executa `issue-certificate`, a CA:
+1. Busca o token que ela gerou para aquele domínio
+2. Faz requisição GET para: `http://<domínio>/.well-known/acme-challenge/<token>.txt`
+3. Verifica se o conteúdo é: `<token>.<domínio>`
+4. Emite o certificado se válido
+
+Simula o protocolo ACME HTTP-01 do Let's Encrypt.
 
 ### 2.4. Configuração HTTPS no Nginx
-- Descreva como foi feita a configuração do servidor para uso do certificado emitido.
+**IMPORTANTE:** Os arquivos já vêm configurados para iniciar apenas com HTTP. As linhas de certificado e o bloco HTTPS estão comentados.
+  
+1. **Inicie o servidor:**
+```bash
+cd docker
+docker-compose up -d
+```
+O servidor inicia apenas com HTTP (porta 80) para servir os desafios.
+2. **Após emitir o certificado**, descomente as linhas no `docker/docker-compose.yml`:
+```yaml
+# - ../certs/server.chained.crt:/etc/nginx/ssl/server.chained.crt
+# - ../keys/server.key:/etc/nginx/ssl/server.key
+```
+
+E descomente o bloco HTTPS no `docker/nginx.conf`, depois reinicie:
+```bash
+docker-compose restart
+```
+Acessa `https://localhost` após emitir o certificado (importar `certs/CA.pem` no navegador primeiro).
 
 ### 2.5. Resultados e Validação
-- URL de acesso: ______________________________  
-- Screenshot da página HTTPS: *(inserir imagem)*  
-- Resultado do comando de verificação: ______________________________  
-- Screenshot do certificado no navegador (cadeado): *(inserir imagem)*  
+- **URL de acesso:** `https://localhost`
+- **Screenshot da página HTTPS:** 
+  ![Página HTTPS](task_1/imgs/secure.png)
+- **Resultado do comando de verificação:** Use `openssl verify` para verificar a cadeia de certificação:
+  ```bash
+  openssl verify -CAfile certs/CA.pem -untrusted certs/intermediate_CA.pem certs/server.chained.crt
+  ```
+  O comando deve retornar `OK` se a hierarquia estiver correta.
+- **Screenshot do certificado no navegador (cadeado):**
+  ![Cadeado no Navegador](task_1/imgs/certificate.png)
 
+### 2.6. Resumo dos Comandos Utilizados
+- `init-root-ca` - Cria CA Raiz
+- `init-intermediate-ca` - Cria CA Intermediária  
+- `generate-challenge <domain>` - Gera e salva token de validação
+- `issue-certificate <domain>` - Valida token e emite certificado
+
+### 2.7. Resumo do fluxo:
+```bash
+# 1. Setup das CAs
+python pki_manager.py init-root-ca
+python pki_manager.py init-intermediate-ca
+
+# 2. Gerar desafio (CA salva o token internamente)
+python pki_manager.py generate-challenge localhost
+
+# 3. No servidor, criar arquivo:
+# challenges/.well-known/acme-challenge/<token>.txt
+# com conteúdo: <token>.localhost
+
+# 4. Emitir certificado (CA valida o token que ela gerou)
+python pki_manager.py issue-certificate localhost
+```
 ---
 
 ## 3. Tarefa 2 – HTTPS com PKI Própria (Root + Intermediária)
@@ -162,28 +292,41 @@ O script ```./task_2/scripts/cleanup.sh``` pode ser usado para excluir automatic
 ## 4. Comparação entre os Dois Cenários
 Responda às questões abaixo com base na experiência prática:
 
-- Quais as principais diferenças entre o uso de certificados públicos e privados?  
-- Em quais cenários cada abordagem é mais adequada?  
-- Por que a importação da CA raiz é necessária no segundo cenário?  
+- **Quais as principais diferenças entre o uso de certificados públicos e privados?** 
+  - **Confiança:** Públicos são confiáveis por padrão em todos os navegadores. Privados exigem que a CA Raiz seja instalada manualmente em cada cliente.
+  - **Validação:** Públicos exigem prova de controle de um domínio na internet (via HTTP, DNS, etc.). Privados são usados para entidades internas (`localhost`) sem validação pública.
+  - **Custo:** Públicos podem ser gratuitos (Let's Encrypt) ou pagos. Privados não têm custo de emissão, mas exigem manutenção da infraestrutura da PKI.
+
+- **Em quais cenários cada abordagem é mais adequada?** 
+  - **Certificados Públicos:** Essenciais para serviços públicos na internet (sites, APIs, lojas virtuais) que precisam de confiança imediata do público.
+  - **Certificados Privados:** Ideais para ambientes internos (intranet), testes (`localhost`), VPNs e comunicação segura entre microsserviços.
+
+- **Por que a importação da CA raiz é necessária no segundo cenário?** 
+  - O navegador possui uma lista interna de CAs confiáveis. Nossa CA privada não está nessa lista. A importação manual do `CA.pem` adiciona nossa CA a essa lista, permitindo que o navegador valide a cadeia de confiança (Raiz -> Intermediária -> Servidor).
 
 ---
 
 ## 5. Conclusões
-- Apresente as principais lições aprendidas durante o projeto.  
-- Explique a importância prática da certificação digital e da confiança em ambientes seguros.
+- **Apresente as principais lições aprendidas durante o projeto.** 
+  - O projeto demonstrou na prática como funciona a "cadeia de confiança" (Raiz -> Intermediária -> Servidor). Vimos que certificados são atestados de identidade digital e aprendemos a importância de usar CAs Intermediárias para proteger a chave Raiz. Também simulamos o protocolo ACME (HTTP-01), entendendo como a validação de domínio é automatizada.
 
+- **Explique a importância prática da certificação digital e da confiança em ambientes seguros.**
+  - A certificação digital é o pilar da confiança na web. Ela garante dois pontos cruciais:
+    1. **Autenticidade:** Prova que o servidor é quem diz ser (evitando impostores).
+    2. **Confidencialidade:** Permite a criptografia (HTTPS), protegendo os dados contra interceptação (ataques *man-in-the-middle*).
+  - Sem ela, transações financeiras e logins online não seriam seguros.
 ---
 
 ## Checklist Final
 | Item | Status |
 |------|--------|
-| Servidor Nginx funcional (Docker) | ✅ / ❌ |
-| Certificado Let's Encrypt emitido e válido | ✅ / ❌ |
+| Servidor Nginx funcional (Docker) | ✅  |
+| HTTPS com Certificado Válido via CA Privada (Root + Intermediária) usando Python |  ✅  |
 | PKI própria criada (Root + Intermediária) | ✅  |
 | Importação da CA raiz no navegador | ✅  |
 | Cadeia de certificação validada com sucesso | ✅  |
-| Relatório completo e entregue | ✅ / ❌ |
-| Apresentação prática (vídeo) | ✅ / ❌ |
+| Relatório completo e entregue | ✅  |
+| Apresentação prática (vídeo) | ✅ |
 
 ---
 
