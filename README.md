@@ -14,11 +14,34 @@
 ---
 
 ## 1. Arquitetura do Ambiente
-Descreva e desenhe (use figuras) a arquitetura geral dos dois cenários implementados, destacando suas diferenças principais:
+O projeto implementou e comparou duas arquiteturas de **Infraestrutura de Chaves Públicas (PKI) Privada**. Ambas têm o mesmo objetivo final: emitir um certificado HTTPS válido para um servidor Nginx local (rodando em `localhost`) usando uma hierarquia de confiança (CA Raiz e CA Intermediária) criada por nós.
 
-- **Cenário 1:** Let's Encrypt + ngrok — uso de uma autoridade certificadora pública para emissão automática de certificados válidos por meio do protocolo ACME.  
-- **Cenário 2:** PKI própria (Root + Intermediária) — criação e operação de uma infraestrutura de chaves públicas local, com emissão de certificados assinados por uma CA interna.
+O modelo de confiança em ambos os cenários é **privado**. Isso significa que a CA Raiz que criamos não é confiavel por padrão pelos navegadores. Para validar o cadeado HTTPS, é uma etapa obrigatória que o cliente (navegador) importe manualmente o certificado da CA Raiz (`CA.pem`) em sua lista de autoridades confiáveis.
 
+As duas arquiteturas implementadas (Tarefa 1 e Tarefa 2) diferem principalmente na ferramenta e no método de emissão do certificado:
+
+### Cenário 1: PKI com Simulação de Validação ACME (Python - Tarefa 1)
+Nesta arquitetura, todo o ciclo de vida da PKI (criação da CA Raiz, Intermediária e emissão de certificados) é gerenciado por scripts Python que utilizam a biblioteca `cryptography`.
+
+* **Componentes:** Scripts Python (`pki_manager.py`), Nginx (em Docker), pasta `challenges` (usada para validação).
+* **Fluxo de Emissão:** Este cenário simula o protocolo ACME (HTTP-01) usado pelo Let's Encrypt:
+    1.  O administrador executa `init-root-ca` e `init-intermediate-ca` (tarefa única).
+    2.  O administrador executa `generate-challenge localhost`. O script Python (agindo como a CA) gera um token secreto.
+    3.  O administrador (agindo como dono do servidor) cria manualmente o arquivo de desafio (`.well-known/acme-challenge/<token>.txt`) no diretório `challenges`, que é servido pelo Nginx na porta 80.
+    4.  O administrador executa `issue-certificate localhost`. O script Python (CA) agora faz uma requisição HTTP ao servidor Nginx para validar o token.
+    5.  Se a validação for bem-sucedida, o script emite o certificado final para o `localhost`.
+* **Diferencial:** A validação é *automatizada* (a CA verifica ativamente o controle do servidor) e se assemelha a um processo de CA pública moderno.
+
+### Cenário 2: PKI com Scripts OpenSSL (Bash - Tarefa 2)
+Nesta arquitetura, o mesmo ciclo de vida da PKI é gerenciado por scripts Bash (`.sh`) que encapsulam comandos diretos da ferramenta `openssl`.
+
+* **Componentes:** Scripts Bash (`.sh`), `openssl` (instalado no sistema), Nginx (em Docker).
+* **Fluxo de Emissão:** Este cenário segue o fluxo *manual* tradicional de uma PKI:
+    1.  O administrador executa scripts para gerar as CAs (`gen_selfsigned_CA.sh`, `gen_intermediate_CA.sh`).
+    2.  O administrador executa um script para gerar uma Chave Privada e um Pedido de Assinatura de Certificado (CSR) para o servidor (`gen_server_CSR.sh`).
+    3.  O administrador (agindo como a CA) recebe o CSR e usa um script para *assinar* manualmente esse pedido usando a CA Intermediária (`sign_server_CSR.sh`).
+    4.  O certificado final é gerado e instalado no Nginx.
+* **Diferencial:** O processo é *manual* e baseado em confiança administrativa. O "dono do servidor" e a "CA" são a mesma pessoa (o administrador), que assina os certificados sem uma verificação de desafio HTTP.
 ---
 
 ## 2. Tarefa 1 – HTTPS com Certificado Válido via CA Privada (Root + Intermediária) usando Python
