@@ -13,6 +13,13 @@
 
 ---
 
+**Link para o vídeo da apresentação prática:**
+[clique aqui](https://drive.google.com/file/d/15ZltQ1VlpE2-zkkFxgv3K4C4un2eE3w_/view?usp=sharing)
+
+---
+
+
+
 ## 1. Arquitetura do Ambiente
 O projeto implementou e comparou duas arquiteturas de **Infraestrutura de Chaves Públicas (PKI) Privada**. Ambas têm o mesmo objetivo final: emitir um certificado HTTPS válido para um servidor Nginx local (rodando em `localhost`) usando uma hierarquia de confiança (CA Raiz e CA Intermediária) criada por nós.
 
